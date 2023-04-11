@@ -38,7 +38,7 @@ type (
 	}
 )
 
-func PubsubToBigQuery() {
+func PubsubToBigQuery(projectId, pubsub_topic, pubsub_subscription, bq_table_string string) {
 	flag.Parse()
 	beam.Init()
 
@@ -47,8 +47,8 @@ func PubsubToBigQuery() {
 	p := beam.NewPipeline()
 	s := p.Root()
 
-	pubsub_messages := pubsubio.Read(s, "sharmaujjwal-sce", "pubsub-test", &pubsubio.ReadOptions{
-		Subscription: "pubsub-test-sub",
+	pubsub_messages := pubsubio.Read(s, projectId, pubsub_topic, &pubsubio.ReadOptions{
+		Subscription: pubsub_subscription,
 	})
 
 	// Data Enrichment by appending the existing date to the pubsub message
@@ -122,7 +122,7 @@ func PubsubToBigQuery() {
 	debug.Print(s, key_aggregation)
 
 	// write to bigquery
-	bigqueryio.Write(s, "sharmaujjwal-sce", "sharmaujjwal-sce:test_dataset.test_table", create_BQRow)
+	bigqueryio.Write(s, projectId, bq_table_string, create_BQRow)
 
 	// Run the beam pipeline
 	if err := beamx.Run(ctx, p); err != nil {
