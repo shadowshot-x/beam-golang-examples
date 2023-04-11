@@ -21,7 +21,7 @@ import (
 // 1. PubSub topic and subscription must be created.
 // 2. Dataflow and related APIs should be there.
 // 3. Dataflow Admin and Dataflow Worker permission should be assigned to SA.
-// 4. BigQuery dataset and table must be created.
+// 4. BigQuery dataset and table with schema must be created.
 
 // Use Case:-
 // 1. Using Golang Apache Beam SDK with Dataflow, Pubsub, BigQuery
