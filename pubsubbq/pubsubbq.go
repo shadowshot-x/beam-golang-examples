@@ -47,11 +47,11 @@ func PubsubToBigQuery(projectId, pubsub_topic, pubsub_subscription, bq_table_str
 	p := beam.NewPipeline()
 	s := p.Root()
 
+	// Pub/Sub messages read by Beam.
 	pubsub_messages := pubsubio.Read(s, projectId, pubsub_topic, &pubsubio.ReadOptions{
 		Subscription: pubsub_subscription,
 	})
 
-	// Data Enrichment by appending the existing date to the pubsub message
 	// Data Filtering by sending data to different pardo based on data values.
 	messages_cluster1, messages_cluster2 := beam.ParDo2(s, func(b []byte, pCollection1, pCollection2 func(string)) {
 		msg := string(b)
@@ -63,23 +63,25 @@ func PubsubToBigQuery(projectId, pubsub_topic, pubsub_subscription, bq_table_str
 	}, pubsub_messages)
 
 	// Data Correction
-	cluster1_kv_pair := beam.ParDo(s, func(ss string) (string, string) {
-		z := strings.Split(ss, ":")
+	cluster1_kv_pair := beam.ParDo(s, func(corrected_string string) (string, string) {
+		z := strings.Split(corrected_string, ":")
+		// edge case
 		if len(z) == 1 {
 			return "device1", z[0]
 		}
-		zz := strings.Split(ss, "-")[1]
+		zz := strings.Split(corrected_string, "-")[1]
 
 		value, err := strconv.Atoi(zz)
 		if err != nil {
 
 		}
 		value = value * 60
-		return z[0], strings.Split(ss, "-")[1] + "-" + fmt.Sprintf("%v", value)
+		return z[0], strings.Split(corrected_string, "-")[1] + "-" + fmt.Sprintf("%v", value)
 	}, messages_cluster1)
-
-	cluster2_kv_pair := beam.ParDo(s, func(ss string) (string, string) {
-		z := strings.Split(ss, ":")
+	// we need another transfer for cluster2 to process using coGroupByKey
+	cluster2_kv_pair := beam.ParDo(s, func(corrected_string string) (string, string) {
+		z := strings.Split(corrected_string, ":")
+		// edge case
 		if len(z) == 1 {
 			return "device2", z[0]
 		}
